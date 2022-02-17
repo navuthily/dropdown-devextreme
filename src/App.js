@@ -24,6 +24,8 @@ const employeesStore = new ArrayStore({
 });
 const employeesDataSource = new DataSource({
   store: employeesStore,
+  paginate: true,
+  pageSize: 10,
 });
 const gridBox_displayExpr = function (item) {
   return (
@@ -119,8 +121,9 @@ function App() {
   } = state;
 
   const dropDownBoxValueChanged = (args) => {
+    console.log("co gi", args);
     clearTimeout(searchTimer);
-    dispatch({ value: args.value, opened: false, type: "all" });
+    dispatch({ value: args.value, opened: true, type: "all" });
   };
   const onInput = function (e) {
     // this.pageIndex(0)
@@ -157,28 +160,39 @@ function App() {
         .store()
         .load()
         .then((items) => {
-          if (items.length > 0 && dataGridInstance && e.event.keyCode === 40)
+          console.log(focusedRowIndex, focusedRowKey, items.length);
+          if (items.length > 0 && dataGridInstance && e.event.keyCode === 40) {
+            console.log("giam");
             dispatch({
               focusedRowIndex:
-                focusedRowKey && focusedRowIndex <= items.length
-                  ? focusedRowIndex + 1
-                  : 0,
-              focusedRowKey: items[focusedRowIndex + 1]?.OrderNumber,
+                focusedRowIndex < items.length - 1 ? focusedRowIndex + 1 : 0,
+              focusedRowKey:
+                focusedRowIndex < items.length - 1
+                  ? items[focusedRowIndex + 1]?.OrderNumber
+                  : items[0]?.OrderNumber,
               type: "focusedRowKey",
             });
-          if (items.length > 0 && dataGridInstance && e.event.keyCode === 38)
+          }
+          if (items.length > 0 && dataGridInstance && e.event.keyCode === 38) {
+            console.log("tang");
             dispatch({
               focusedRowIndex:
-                focusedRowIndex >= 0 ? focusedRowIndex - 1 : items.length - 1,
-              focusedRowKey: items[focusedRowIndex - 1]?.OrderNumber,
+                focusedRowIndex > 0 ? focusedRowIndex - 1 : items.length - 1,
+              focusedRowKey:
+                focusedRowIndex > 0
+                  ? items[focusedRowIndex - 1]?.OrderNumber
+                  : items[items.length - 1]?.OrderNumber,
               type: "focusedRowKey",
             });
+          }
+
           if (e.event.keyCode === 13) {
-            // dispatch({
-            //   value: items[focusedRowIndex],
-            //   opened: false,
-            //   type: "all",
-            // });
+            console.log("k co gi");
+            dispatch({
+              value: items[focusedRowIndex],
+              opened: false,
+              type: "all",
+            });
           }
         });
     }
@@ -319,10 +333,10 @@ const DataGridComponent = ({ data }) => {
     dropdownInstance,
   } = useContext(DropDownBoxDispatch);
   const selectionChanged = (e) => {
-    setTimeout(() => {
-      e.component.focus();
-      dropdownInstance.field().select();
-    }, 0);
+    // setTimeout(() => {
+    //   e.component.focus();
+    //   dropdownInstance.field().select();
+    // }, 0);
     // console.log(444);
 
     // e.component.focus()
@@ -336,13 +350,6 @@ const DataGridComponent = ({ data }) => {
     }
   };
 
-  const keyDown = (e) => {
-    console.log("nooooo", e);
-    // if (e.event.keyCode === 13) {
-    //   // Enter press
-    //   dispatch({ value: [focusedRowKey], opened: false, type: "all" });
-    // }
-  };
   const focusedRowChanged = (e) => {
     dispatch({
       focusedRowIndex: e.rowIndex,
@@ -351,10 +358,10 @@ const DataGridComponent = ({ data }) => {
     });
   };
   const onCell = () => {
-    console.log("nothing");
+    console.log("oncellClick");
   };
   const onR = (e) => {
-    console.log("nooooo");
+    console.log("onFocusedRowChanging");
   };
   return (
     <DataGrid
@@ -367,7 +374,6 @@ const DataGridComponent = ({ data }) => {
       autoNavigateToFocusedRow={true}
       remoteOperations={true}
       hoverStateEnabled={true}
-      onKeyDown={keyDown}
       focusedRowIndex={focusedRowIndex}
       focusedRowKey={focusedRowKey}
       onSelectionChanged={selectionChanged}
