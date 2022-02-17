@@ -25,7 +25,7 @@ const employeesStore = new ArrayStore({
 const employeesDataSource = new DataSource({
   store: employeesStore,
   paginate: true,
-  pageSize: 10,
+  pageSize: 3,
 });
 const gridBox_displayExpr = function (item) {
   return (
@@ -160,6 +160,7 @@ function App() {
         .store()
         .load()
         .then((items) => {
+          console.log(employeesDataSource, "item");
           console.log(focusedRowIndex, focusedRowKey, items.length);
           if (items.length > 0 && dataGridInstance && e.event.keyCode === 40) {
             console.log("giam");
@@ -187,7 +188,6 @@ function App() {
           }
 
           if (e.event.keyCode === 13) {
-            console.log("k co gi");
             dispatch({
               value: items[focusedRowIndex],
               opened: false,
@@ -390,7 +390,7 @@ const DataGridComponent = ({ data }) => {
         <Format type="currency" precision={2} />
       </Column>
       <Selection mode="single" />
-      <Scrolling mode="virtual" />
+      <Scrolling mode="infinite" />
       <Paging enabled={true} />
       <FilterRow visible={true} />
     </DataGrid>
