@@ -25,7 +25,7 @@ const employeesStore = new ArrayStore({
 const employeesDataSource = new DataSource({
   store: employeesStore,
   paginate: true,
-  pageSize: 3,
+  // searchExpr: ["StoreCity", "StoreState", "Employee"],
 });
 const gridBox_displayExpr = function (item) {
   return (
@@ -121,7 +121,7 @@ function App() {
   } = state;
 
   const dropDownBoxValueChanged = (args) => {
-    console.log("co gi", args);
+    console.log(args.value, "args");
     clearTimeout(searchTimer);
     dispatch({ value: args.value, opened: true, type: "all" });
   };
@@ -132,13 +132,16 @@ function App() {
       let text = e.component.option("text");
       gridDataSource.searchValue(text);
       if (opened && isSearchIncomplete(e.component)) {
-        gridDataSource.load().then((items) => {
-          if (items.length > 0 && dataGridInstance)
-            dispatch({
-              focusedRowKey: items[0].OrderNumber,
-              type: "focusedRowKey",
-            });
-        });
+        gridDataSource
+          // .store()
+          .load()
+          .then((items) => {
+            if (items.length > 0 && dataGridInstance)
+              dispatch({
+                focusedRowKey: items[0].OrderNumber,
+                type: "focusedRowKey",
+              });
+          });
       } else {
         dispatch({ opened: true, type: "open/close" });
       }
@@ -156,45 +159,40 @@ function App() {
       ddbInstance.isKeyDown = true;
       dispatch({ opened: true, type: "open/close" });
     } else {
-      employeesDataSource
-        .store()
-        .load()
-        .then((items) => {
-          console.log(employeesDataSource, "item");
-          console.log(focusedRowIndex, focusedRowKey, items.length);
-          if (items.length > 0 && dataGridInstance && e.event.keyCode === 40) {
-            console.log("giam");
-            dispatch({
-              focusedRowIndex:
-                focusedRowIndex < items.length - 1 ? focusedRowIndex + 1 : 0,
-              focusedRowKey:
-                focusedRowIndex < items.length - 1
-                  ? items[focusedRowIndex + 1]?.OrderNumber
-                  : items[0]?.OrderNumber,
-              type: "focusedRowKey",
-            });
-          }
-          if (items.length > 0 && dataGridInstance && e.event.keyCode === 38) {
-            console.log("tang");
-            dispatch({
-              focusedRowIndex:
-                focusedRowIndex > 0 ? focusedRowIndex - 1 : items.length - 1,
-              focusedRowKey:
-                focusedRowIndex > 0
-                  ? items[focusedRowIndex - 1]?.OrderNumber
-                  : items[items.length - 1]?.OrderNumber,
-              type: "focusedRowKey",
-            });
-          }
-
-          if (e.event.keyCode === 13) {
-            dispatch({
-              value: items[focusedRowIndex],
-              opened: false,
-              type: "all",
-            });
-          }
+      let items = dataGridInstance.getVisibleRows();
+      console.log(items, "items ne");
+      console.log(focusedRowKey, focusedRowIndex, items[focusedRowIndex].key);
+      if (items.length > 0 && dataGridInstance && e.event.keyCode === 40) {
+        console.log("giam");
+        dispatch({
+          focusedRowIndex:
+            focusedRowIndex < items.length - 1 ? focusedRowIndex + 1 : 0,
+          focusedRowKey:
+            focusedRowIndex < items.length - 1
+              ? items[focusedRowIndex + 1]?.key
+              : items[0]?.key,
+          type: "focusedRowKey",
         });
+      }
+      if (items.length > 0 && dataGridInstance && e.event.keyCode === 38) {
+        console.log("tang");
+        dispatch({
+          focusedRowIndex:
+            focusedRowIndex > 0 ? focusedRowIndex - 1 : items.length - 1,
+          focusedRowKey:
+            focusedRowIndex > 0
+              ? items[focusedRowIndex - 1]?.key
+              : items[items.length - 1]?.key,
+          type: "focusedRowKey",
+        });
+      }
+      if (e.event.keyCode === 13) {
+        dispatch({
+          value: items[focusedRowIndex]?.key,
+          opened: false,
+          type: "all",
+        });
+      }
     }
   };
   const onOpened = (e) => {
@@ -249,7 +247,6 @@ function App() {
     }
   };
   const onClosed = (e) => {
-    // e.component.focus();
     let ddbInstance = e.component,
       searchValue = gridDataSource.searchValue();
     if (isSearchIncomplete(ddbInstance)) {
@@ -333,13 +330,10 @@ const DataGridComponent = ({ data }) => {
     dropdownInstance,
   } = useContext(DropDownBoxDispatch);
   const selectionChanged = (e) => {
-    // setTimeout(() => {
-    //   e.component.focus();
-    //   dropdownInstance.field().select();
-    // }, 0);
-    // console.log(444);
-
-    // e.component.focus()
+    setTimeout(() => {
+      e.component.focus();
+      dropdownInstance.field().select();
+    }, 0);
     dispatch({ value: e.selectedRowKeys, opened: false, type: "all" });
   };
   const contentReady = (e) => {
@@ -357,16 +351,8 @@ const DataGridComponent = ({ data }) => {
       type: "focusedRowKey",
     });
   };
-  const onCell = () => {
-    console.log("oncellClick");
-  };
-  const onR = (e) => {
-    console.log("onFocusedRowChanging");
-  };
   return (
     <DataGrid
-      onCellClick={onCell}
-      onFocusedRowChanging={onR}
       onFocusedRowChanged={focusedRowChanged}
       dataSource={dataSource}
       focusedRowEnabled={true}
@@ -390,7 +376,7 @@ const DataGridComponent = ({ data }) => {
         <Format type="currency" precision={2} />
       </Column>
       <Selection mode="single" />
-      <Scrolling mode="infinite" />
+      <Scrolling mode="virtual" />
       <Paging enabled={true} />
       <FilterRow visible={true} />
     </DataGrid>
